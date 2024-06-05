@@ -1,0 +1,6 @@
+opencv-python==4.9.0.80
+pandas==2.2.1
+matplotlib==3.8.3
+numpy==1.26.4
+scikit-learn==1.4.1
+tqdm==4.66.2
