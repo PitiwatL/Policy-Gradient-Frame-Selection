@@ -33,29 +33,14 @@ from Utils.Losses import FocalLoss
 
 from Utils.LSTM import LSTMCells
 
-# # from Utils.ResNetModel import ResNet50
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 x = torch.cuda.is_available()
 print("GPU Available: ", x)
 
+Target_PATH = "MiniDataFrame"
 
-Target_PATH1 = ['/project/lt200210-action/Dataset/NTU-RGBD/RGBDvideos/nturgbd_rgb_s00' + str(idx+1) + '/nturgb+d_rgb/'
-               for idx in range(9)]
-
-Target_PATH2 = ['/project/lt200210-action/Dataset/NTU-RGBD/RGBDvideos/nturgbd_rgb_s0' + str(idx+1) + '/nturgb+d_rgb/'
-               for idx in range(9, 17)]
-
-# Target_PATH = Target_PATH1 + Target_PATH2
-
-Target_PATH = "/project/lt200210-action/NTU-RGBD/StickRGB"
-
-Class = ['A001', 'A002', 'A003', 'A004', 'A005', 'A006', 'A007', 'A008', 'A009', 'A010',
-         'A011', 'A012', 'A013', 'A014', 'A015', 'A016', 'A017', 'A018', 'A019', 'A020',
-         'A021', 'A022', 'A023', 'A024', 'A025', 'A026', 'A027', 'A028', 'A029', 'A030',
-         'A031', 'A032', 'A033', 'A034', 'A035', 'A036', 'A037', 'A038', 'A039', 'A040',
-         'A041', 'A042', 'A043', 'A044', 'A045', 'A046', 'A047', 'A048', 'A049', 'A050',
-         'A051', 'A052', 'A053', 'A054', 'A055', 'A056', 'A057', 'A058', 'A059', 'A060']
+Class = ['A001', 'A002', 'A003', 'A004', 'A005']
 
 Class = sorted(Class)
 INDEX = [i for i in range(60)]
@@ -87,23 +72,10 @@ for path in os.listdir(Target_PATH):
             X_val.append(Target_PATH + "/" + path)
             y_val.append(Class.index(path[16:20]))
 
-### Cross View
-# for folder in os.listdir('/project/lt200048-video/NTU-RGBD/Stick'):
-#     if Class.index(folder[16:20]) in INDEX:
-#         if folder[4:8] in ['C002', 'C003'] :
-#             X_train.append(Path_train + folder)
-#             y_train.append(Class.index(folder[16:20]))
-
-# for folder in os.listdir('/project/lt200048-video/NTU-RGBD/ROI_Images/fivefs'):
-#     if Class.index(folder[16:20]) in INDEX:
-#         if folder[4:8] in ['C001'] :
-#             X_val.append(Path_test + folder)
-#             y_val.append(Class.index(folder[16:20]))
-
 print('Num train: ', len(y_train))
 print('Num test: ', len(y_val))
 
-frame_size = 64
+frame_size = 224
 
 train_transform = transforms.Compose([
         transforms.Resize((frame_size, frame_size)),
@@ -118,26 +90,26 @@ train_dataset = ImageDatasetPad(data_paths = X_train,
                              labels     = y_train,
                              transform  = train_transform,
                              size = frame_size, 
-                             target_num_frame = 30, 
+                             target_num_frame = 5, 
                              mode = 'train' )
 
 val_dataset   = ImageDatasetPad(data_paths = X_val, 
                              labels     = y_val,
                              transform  = train_transform,
                              size = frame_size, 
-                             target_num_frame = 30, mode = 'test')
+                             target_num_frame = 5, mode = 'test')
 
-train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=28)
-val_loader   = DataLoader(val_dataset,   batch_size=256,  shuffle=False, num_workers=28)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+val_loader   = DataLoader(val_dataset,   batch_size=16, shuffle=False)
 
-#### Define the based model
-model_base = SkimNetworkPad(128)
-model = model_base.to(device)
-model = torch.nn.DataParallel(model)
-
-# model_base = EvalNetworkPad(128)
+# #### Define the based model
+# model_base = SkimNetworkPad(128)
 # model = model_base.to(device)
 # model = torch.nn.DataParallel(model)
+
+model_base = EvalNetworkPad(128)
+model = model_base.to(device)
+model = torch.nn.DataParallel(model)
 
 # model.load_state_dict(torch.load('/project/lt200210-action/OCS_Sampler/weights/Skim_ResNet18_LSTM_224_20.pt'))
 # print("Load weights complete!")
@@ -147,10 +119,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.6, 
                                      patience=3, min_lr= 1 * 1e-6 ,verbose = True)
 
-########################
-###### load Weight #####
-########################
-# model.load_state_dict(torch.load('/project/lt200210-action/OCS_Sampler/weights/Eval_ResNet18_LSTM_Skim_224_5.pt'))
+# ########################
+# ###### load Weight #####
+# ########################
+# # model.load_state_dict(torch.load('/project/lt200210-action/OCS_Sampler/weights/Eval_ResNet18_LSTM_Skim_224_5.pt'))
 
 #### Start Training Loop
 epochs = 200
@@ -224,7 +196,7 @@ for eph in range(epochs):
         if eph > 0 :
             print(f'Loss Validation improves from {val_loss_his[eph-1]:.7f} to {val_loss_his[eph]:.7f}')
             torch.save(model.state_dict(), 
-                       '/project/lt200210-action/OCS_Sampler/weights/SkimPad_ResNet18_LSTM_64_30_60_Classes.pt')
+                       'Weights\\EvalPad_ResNet18_LSTM_64_30_60_Classes.pt')
             print('Save best weight!')
             
     if np.mean(loss_epoch_val) > min(val_loss_his) :
@@ -243,4 +215,4 @@ for eph in range(epochs):
             print(f'stop training!')
             break
 
-print('Save Complete on SkimPad Resnet18 on the flies 224!')
+# print('Save Complete on SkimPad Resnet18 on the flies 224!')

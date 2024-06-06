@@ -23,9 +23,9 @@ class LSTM(nn.Module):
         self.cell1 = LSTMCells(input_fea = input_fea, hidden_unit = self.hidden_unit)
         self.cell2 = LSTMCells(input_fea = input_fea, hidden_unit = self.hidden_unit)
         
-        self.resnet = models.resnet18(weights = None)
-        self.resnet.load_state_dict(torch.load(
-                                '/project/lt200210-action/OCS_Sampler/Pretrain_weight/ResNet18/resnet18-f37072fd.pth') )
+        self.resnet = models.resnet18(weights = True)
+        # self.resnet.load_state_dict(torch.load(
+        #                         '/project/lt200210-action/OCS_Sampler/Pretrain_weight/ResNet18/resnet18-f37072fd.pth') )
         self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 128) 
       
       def forward(self, Seq): # [batch, Num_Cells, Depth]
@@ -119,15 +119,15 @@ class EvalNetwork(nn.Module):
 class SkimNetworkPad(nn.Module):
     def __init__(self, hidden_unit):
         super(SkimNetworkPad, self).__init__()
-        self.resnet = models.resnet18(weights = None)
-        self.resnet.load_state_dict(torch.load(
-                                '/project/lt200210-action/OCS_Sampler/Pretrain_weight/ResNet18/resnet18-f37072fd.pth') )
+        self.resnet = models.resnet18(weights = True)
+        # self.resnet.load_state_dict(torch.load(
+        #                         '/project/lt200210-action/OCS_Sampler/Pretrain_weight/ResNet18/resnet18-f37072fd.pth') )
         self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 128) 
 
         self.hidden_dim = hidden_unit
         self.cf1 = nn.Linear(hidden_unit, 128)
         self.cf2 = nn.Linear(128, 64)
-        self.cf3 = nn.Linear(64, 60)
+        self.cf3 = nn.Linear(64, 5)
 
         # self.dropout = nn.Dropout(0.2)
         self.relu  = nn.ReLU()
@@ -150,15 +150,15 @@ class SkimNetworkPad(nn.Module):
 class EvalNetworkPad(nn.Module):
     def __init__(self, hidden_unit):
         super(EvalNetworkPad, self).__init__()
-        self.resnet = models.resnet18(weights = None)
-        self.resnet.load_state_dict(torch.load(
-                                '/project/lt200210-action/OCS_Sampler/Pretrain_weight/ResNet18/resnet18-f37072fd.pth') )
+        self.resnet = models.resnet18(weights = True)
+        # self.resnet.load_state_dict(torch.load(
+        #                         '/project/lt200210-action/OCS_Sampler/Pretrain_weight/ResNet18/resnet18-f37072fd.pth') )
         self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 128) 
 
         self.hidden_dim = hidden_unit
         self.cf1 = nn.Linear(hidden_unit, 128)
         self.cf2 = nn.Linear(128, 64)
-        self.cf3 = nn.Linear(64, 60)
+        self.cf3 = nn.Linear(64, 5)
 
         # self.dropout = nn.Dropout(0.2)
         self.relu  = nn.ReLU()
